@@ -1420,6 +1420,31 @@ EXTRA['es'].update({
     'Shows the render resolutions of this shape only.': 'Muestra solo las resoluciones de render de esta proporción.',
 })
 
+EXTRA['pt'].update({
+    'Audio': 'Áudio',
+    'Volume': 'Volume',
+    'Speakers': 'Alto-falantes',
+    'Stereo': 'Estéreo',
+    '5.1 surround': 'Surround 5.1',
+    '7.1 surround': 'Surround 7.1',
+    "Master volume of the game's audio. 100% is the game's own mix; more is louder, with a soft limiter so loud scenes do not clip. Also in the in-game menu.":
+        'Volume geral do áudio do jogo. 100% é a mixagem original do jogo; mais é mais alto, com um limitador suave para que cenas altas não distorçam. Também no menu do jogo.',
+    "Layout the game's 7.1 mix is sent in. Automatic follows your sound device: stereo, 5.1 or 7.1. Applied when the game starts.":
+        'Formato em que a mixagem 7.1 do jogo é enviada. Automático segue o seu dispositivo de som: estéreo, 5.1 ou 7.1. Aplicado quando o jogo inicia.',
+})
+EXTRA['es'].update({
+    'Audio': 'Audio',
+    'Volume': 'Volumen',
+    'Speakers': 'Altavoces',
+    'Stereo': 'Estéreo',
+    '5.1 surround': 'Envolvente 5.1',
+    '7.1 surround': 'Envolvente 7.1',
+    "Master volume of the game's audio. 100% is the game's own mix; more is louder, with a soft limiter so loud scenes do not clip. Also in the in-game menu.":
+        'Volumen general del audio del juego. 100% es la mezcla original del juego; más es más alto, con un limitador suave para que las escenas fuertes no distorsionen. También en el menú del juego.',
+    "Layout the game's 7.1 mix is sent in. Automatic follows your sound device: stereo, 5.1 or 7.1. Applied when the game starts.":
+        'Formato en que se envía la mezcla 7.1 del juego. Automático sigue tu dispositivo de sonido: estéreo, 5.1 o 7.1. Se aplica al iniciar el juego.',
+})
+
 EXTRA['pt'].update({'Polish': 'Polonês'})
 EXTRA['es'].update({'Polish': 'Polaco'})
 for _lang, _text in (('pl', 'Polski'), ('fr', 'Polonais'), ('de', 'Polnisch'),

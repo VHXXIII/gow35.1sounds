@@ -355,6 +355,14 @@ extern "C" int gow3gpu_vibration_percent(void) {
     return Gow3Settings::Get().vibration.load(std::memory_order_relaxed);
 }
 
+extern "C" int gow3gpu_audio_volume_percent(void) {
+    return Gow3Settings::Get().master_volume.load(std::memory_order_relaxed);
+}
+
+extern "C" int gow3gpu_audio_channels(void) {
+    return Gow3Settings::Get().audio_channels.load(std::memory_order_relaxed);
+}
+
 extern "C" void gow3gpu_movie_picture(void) {
     Vulkan::MovieBars::Cutscenes().NotePicture(Vulkan::MovieBars::NowMs());
 }

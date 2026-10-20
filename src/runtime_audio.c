@@ -8,6 +8,7 @@
  * ports only follow the clock. */
 #define _GNU_SOURCE
 #include "runtime.h"
+#include "gpu/gow3gpu.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,7 +31,8 @@
 #define VOLUME_0DB 32768
 
 typedef struct {
-    int used, type, channels, is_float, frames, sample_bytes, std_layout, downmix;
+    int used, type, channels, is_float, frames, sample_bytes, std_layout;
+    int out_channels; /* what is sent to the device: `channels`, or 2 / 6 for a 7.1 port folded down */
     int32_t volume[8];
     SDL_AudioStream *stream;
     uint64_t next_deadline_ns; /* next return of sceAudioOutOutput */
@@ -80,26 +82,90 @@ static int port_range(int type, int *first, int *last) {
     default: return 0;
     }
 }
-/* SDL's 7.1-to-stereo matrix keeps only ~0.21 of the front channels (-13.5 dB), so the game
-   was far too quiet on stereo outputs. Folds SDL-ordered FL FR C LFE BL BR SL SR frames to
-   stereo in place: fronts at full level, center and surrounds at -3 dB, LFE dropped, clamped.
-   Returns the stereo byte count. */
-static size_t downmix_stereo(unsigned char *buf, size_t frames, int is_float) {
-    const float k=0.70710678f;
-    for (size_t f=0;f<frames;++f) {
-        float s[8], lr[2];
-        for (int c=0;c<8;++c) {
-            if (is_float) memcpy(&s[c],buf+(f*8+(size_t)c)*4,4);
-            else { int16_t v; memcpy(&v,buf+(f*8+(size_t)c)*2,2); s[c]=(float)v/32768.0f; }
-        }
-        lr[0]=s[0]+k*(s[2]+s[4]+s[6]); lr[1]=s[1]+k*(s[2]+s[5]+s[7]);
-        for (int c=0;c<2;++c) {
-            float v=lr[c]<-1.0f ? -1.0f : lr[c]>1.0f ? 1.0f : lr[c];
-            if (is_float) memcpy(buf+(f*2+(size_t)c)*4,&v,4);
-            else { int16_t o=(int16_t)(v*32767.0f); memcpy(buf+(f*2+(size_t)c)*2,&o,2); }
-        }
+/* Speaker layouts a 7.1 port can be sent to (gow3.ini audio_channels, menu "Speakers"). */
+enum { OUT_STEREO=2, OUT_51=6, OUT_71=8 };
+enum { MODE_AUTO=0, MODE_STEREO=1, MODE_51=2, MODE_71=3 }; /* gow3gpu_audio_channels() */
+
+/* The layout a 7.1 port is sent in. `mode` is the setting, `device` the playback device's channel
+   count (0: unknown, the stream is left to SDL's own conversion). Automatic follows the device:
+   7.1 or more stays 7.1, 5.1 / 6.1 is folded to 5.1, anything smaller to stereo. */
+static int output_channels(int mode, int device) {
+    switch (mode) {
+    case MODE_STEREO: return OUT_STEREO;
+    case MODE_51: return OUT_51;
+    case MODE_71: return OUT_71;
+    default: return device<=0 || device>=8 ? OUT_71 : device>=6 ? OUT_51 : OUT_STEREO;
     }
-    return frames*2*(is_float ? 4u : 2u);
+}
+static const char *layout_name(int channels) { return channels==OUT_STEREO ? "stereo" : channels==OUT_51 ? "5.1" : "7.1"; }
+
+/* The menu's master volume, 0 to 200 percent, as a gain. */
+static float master_gain(void) {
+    int percent=gow3gpu_audio_volume_percent();
+    return (float)(percent<0 ? 0 : percent>200 ? 200 : percent)/100.0f;
+}
+
+/* Keeps a folded or boosted mix inside full scale without the harsh distortion of a hard clip:
+   untouched up to 0.8, then bent towards 1.0 (slope 1 at the knee, never above 1). */
+static float soft_limit(float x) {
+    const float knee=0.8f, room=1.0f-knee;
+    float a=x<0 ? -x : x;
+    if (a<=knee) return x;
+    if (!(a<1e6f)) return a!=a ? 0.0f : x<0 ? -1.0f : 1.0f; /* NaN and huge values */
+    float y=knee+(a-knee)/(1.0f+(a-knee)/room);
+    if (y>1.0f) y=1.0f;
+    return x<0 ? -y : y;
+}
+
+/* SDL's own 7.1 conversions keep only part of the front channels (to stereo ~0.21, -13.5 dB), so
+   the game was far too quiet. Folds one SDL-ordered 7.1 frame (FL FR C LFE BL BR SL SR) to
+   `out_channels`, in the layout SDL expects:
+   - stereo: fronts at full level, center and surrounds at -3 dB, LFE dropped;
+   - 5.1 (FL FR C LFE BL BR, the last two being the surrounds): front, center and LFE as they are,
+     each surround takes the side channel plus the back one at -3 dB.
+   The result can pass full scale; the caller limits it. */
+static void fold_frame(const float s[8], float *out, int out_channels) {
+    const float k=0.70710678f;
+    if (out_channels==OUT_STEREO) {
+        out[0]=s[0]+k*(s[2]+s[4]+s[6]); out[1]=s[1]+k*(s[2]+s[5]+s[7]);
+    } else {
+        out[0]=s[0]; out[1]=s[1]; out[2]=s[2]; out[3]=s[3];
+        out[4]=s[6]+k*s[4]; out[5]=s[7]+k*s[5];
+    }
+}
+
+static float load_sample(const void *data, size_t index, int is_float) {
+    if (is_float) { float v; memcpy(&v,(const char *)data+index*4,4); return v; }
+    int16_t v; memcpy(&v,(const char *)data+index*2,2); return (float)v/32768.0f;
+}
+static void store_sample(void *data, size_t index, float v, int is_float) {
+    if (is_float) { memcpy((char *)data+index*4,&v,4); return; }
+    float t=v*32768.0f;
+    t = t>32767.0f ? 32767.0f : t<-32768.0f ? -32768.0f : t;
+    int16_t o=(int16_t)(t<0 ? t-0.5f : t+0.5f);
+    memcpy((char *)data+index*2,&o,2);
+}
+/* One period of the game's samples to what the device stream takes: the port's per-channel
+   volumes times `master`, PS4 8ch (L R C LFE SL SR BL BR) to SDL 7.1 order, then folded to
+   `out_channels` when that is fewer. Folded or boosted mixes go through the soft limiter; a
+   port passed on as it is (volume 100%) is only scaled by its own volumes, as before. `out` holds
+   frames * out_channels samples of the port's format. */
+static void shape_buffer(const Port *p, const void *data, void *out, float master) {
+    static const int remap[8]={0,1,2,3,6,7,4,5};
+    float gain[8];
+    for (int c=0;c<p->channels;++c) gain[c]=(float)p->volume[c]/VOLUME_0DB*master;
+    const int fold=p->channels==8 && p->out_channels<8, limit=fold || master>1.0f;
+    const int n=fold ? p->out_channels : p->channels;
+    for (size_t f=0;f<(size_t)p->frames;++f) {
+        float s[8]={0}, o[8];
+        for (int c=0;c<p->channels;++c) {
+            int target=p->channels==8 && !p->std_layout ? remap[c] : c;
+            s[target]=load_sample(data,f*(size_t)p->channels+(size_t)c,p->is_float)*gain[c];
+        }
+        const float *src=s;
+        if (fold) { fold_frame(s,o,p->out_channels); src=o; }
+        for (int c=0;c<n;++c) store_sample(out,f*(size_t)n+(size_t)c,limit ? soft_limit(src[c]) : src[c],p->is_float);
+    }
 }
 static Port *port_of(int32_t handle, int32_t *error) {
     int id=handle & 0xff;
@@ -135,11 +201,14 @@ static ABI int32_t audio_open(int32_t user, int32_t type, int32_t index, uint32_
     p->used=1; p->type=type; p->channels=channels[format]; p->is_float=format>=3 && format!=6;
     p->sample_bytes=p->is_float ? 4 : 2; p->frames=(int)length; p->std_layout=format>=6;
     for (int c=0;c<8;++c) p->volume[c]=VOLUME_0DB;
+    int device_channels=0;
     if (sdl_audio()) {
         SDL_AudioSpec device; int device_frames;
-        p->downmix=p->channels==8 && SDL_GetAudioDeviceFormat(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,&device,&device_frames)
-                   && device.channels==2;
-        SDL_AudioSpec spec={p->is_float ? SDL_AUDIO_F32 : SDL_AUDIO_S16, p->downmix ? 2 : p->channels, 48000};
+        if (SDL_GetAudioDeviceFormat(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,&device,&device_frames)) device_channels=device.channels;
+    }
+    p->out_channels=p->channels==8 ? output_channels(gow3gpu_audio_channels(),device_channels) : p->channels;
+    if (sdl_audio()) {
+        SDL_AudioSpec spec={p->is_float ? SDL_AUDIO_F32 : SDL_AUDIO_S16, p->out_channels, 48000};
         p->stream=SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,&spec,NULL,NULL);
         if (p->stream) SDL_ResumeAudioStreamDevice(p->stream);
         else fprintf(stderr,"Runtime: SDL audio stream failed (%s); port %d uses the timer sink\n",SDL_GetError(),id);
@@ -148,13 +217,15 @@ static ABI int32_t audio_open(int32_t user, int32_t type, int32_t index, uint32_
     const char *dump=getenv("GOW3_AUDIO_DUMP");
     if (dump) {
         char path[4096];
-        snprintf(path,sizeof(path),"%s.port%d.%dch.%s",dump,id,p->downmix ? 2 : p->channels,p->is_float ? "f32" : "s16");
+        snprintf(path,sizeof(path),"%s.port%d.%dch.%s",dump,id,p->out_channels,p->is_float ? "f32" : "s16");
         p->dump=fopen(path,"wb");
     }
     ++ports_opened;
     pthread_mutex_unlock(&table_lock);
-    printf("Runtime: audio port %d opened (type %d, %d ch, %s, %u frames%s)\n",id,type,p->channels,p->is_float ? "float" : "s16",length,
-           p->downmix ? ", downmixed to stereo" : "");
+    char layout[64]="";
+    if (p->channels==8) snprintf(layout,sizeof(layout),", %s to %s (device %d ch)",
+                                 p->out_channels<8 ? "downmixed" : "sent",layout_name(p->out_channels),device_channels);
+    printf("Runtime: audio port %d opened (type %d, %d ch, %s, %u frames%s)\n",id,type,p->channels,p->is_float ? "float" : "s16",length,layout);
     return (type<<16) | id | 0x20000000;
 }
 static ABI int32_t audio_close(int32_t handle) {
@@ -180,20 +251,12 @@ static int32_t output_port(int32_t handle, const void *data, int pace) {
     pthread_mutex_unlock(&table_lock);
     if (!p) return error;
     pthread_mutex_lock(&p->lock);
-    size_t samples=(size_t)p->frames*(size_t)p->channels, bytes=samples*(size_t)p->sample_bytes;
+    size_t samples=(size_t)p->frames*(size_t)p->channels, bytes=(size_t)p->frames*(size_t)p->out_channels*(size_t)p->sample_bytes;
     uint64_t period=(uint64_t)p->frames*1000000000u/48000u;
     if (data) {
-        /* Apply per-channel volume and map PS4 8ch (L R C LFE SL SR BL BR) to SDL 7.1 order. */
+        /* Port volumes and master volume, PS4 8ch to SDL 7.1 order, folded to the device's layout. */
         unsigned char converted[2048*8*4];
-        static const int remap[8]={0,1,2,3,6,7,4,5};
-        for (size_t f=0;f<(size_t)p->frames;++f) for (int c=0;c<p->channels;++c) {
-            int target=p->channels==8 && !p->std_layout ? remap[c] : c;
-            size_t from=f*(size_t)p->channels+(size_t)c, to=f*(size_t)p->channels+(size_t)target;
-            float gain=(float)p->volume[c]/VOLUME_0DB;
-            if (p->is_float) { float v; memcpy(&v,(const char *)data+from*4,4); v*=gain; memcpy(converted+to*4,&v,4); }
-            else { int16_t v; memcpy(&v,(const char *)data+from*2,2); v=(int16_t)((float)v*gain); memcpy(converted+to*2,&v,2); }
-        }
-        if (p->downmix) bytes=downmix_stereo(converted,(size_t)p->frames,p->is_float);
+        shape_buffer(p,data,converted,master_gain());
         if (p->dump) fwrite(converted,1,bytes,p->dump);
         if (p->stats) {
             uint64_t now=now_ns();
