@@ -1,3 +1,4 @@
+# Windows zip build of the audio-51-master-volume branch (5.1/7.1 output, master volume).
 # Windows package: built with MSYS2 CLANG64 and a python.org-style Python (packaging/windows/README.md),
 # then opened on a clean runner without MSYS2 before it is published. Run by hand
 # (Actions > Windows zip > Run workflow), on the branch to build:
