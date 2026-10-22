@@ -1455,6 +1455,19 @@ EXTRA['es'].update({
         'Formato en que se envía la mezcla 7.1 del juego. Automático sigue tu dispositivo de sonido: estéreo, 5.1 o 7.1. Se aplica al iniciar el juego.',
 })
 
+EXTRA['pt'].update({
+    'Effects': 'Efeitos',
+    'Motion blur': 'Desfoque de movimento',
+    "The game's own motion blur on fast moving objects and the camera. Off removes it.":
+        'O desfoque de movimento do próprio jogo em objetos rápidos e na câmera. Desligado, ele é removido.',
+})
+EXTRA['es'].update({
+    'Effects': 'Efectos',
+    'Motion blur': 'Desenfoque de movimiento',
+    "The game's own motion blur on fast moving objects and the camera. Off removes it.":
+        'El desenfoque de movimiento del propio juego en objetos rápidos y en la cámara. Desactivado, se elimina.',
+})
+
 EXTRA['pt'].update({'Polish': 'Polonês'})
 EXTRA['es'].update({'Polish': 'Polaco'})
 for _lang, _text in (('pl', 'Polski'), ('fr', 'Polonais'), ('de', 'Polnisch'),
@@ -1955,6 +1968,13 @@ EXTRA['zh'].update({
         '游戏音频的主音量。100% 为游戏自带的混音；调高会更响亮，并带有软限幅，避免嘈杂场景出现削波失真。游戏内菜单中也有此选项。',
     "Layout the game's 7.1 mix is sent in. Automatic follows your sound device: stereo, 5.1 or 7.1. Applied when the game starts.":
         '游戏的 7.1 混音输出所用的声道布局。“自动”会跟随你的声音设备：立体声、5.1 或 7.1。游戏启动时生效。',
+})
+
+EXTRA['zh'].update({
+    'Effects': '画面效果',
+    'Motion blur': '动态模糊',
+    "The game's own motion blur on fast moving objects and the camera. Off removes it.":
+        '游戏自带的动态模糊（快速移动的物体和镜头）。关闭后将其移除。',
 })
 
 _tables = {}
