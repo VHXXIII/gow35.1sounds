@@ -36,22 +36,22 @@ jobs:
         if: always()
         shell: powershell
         run: |
-          Copy-Item -Recurse -Force "$env:GITHUB_WORKSPACE\shots" "$env:RUNNER_TEMP\shots"
-          Copy-Item -Recurse -Force "$env:GITHUB_WORKSPACE\results" "$env:RUNNER_TEMP\results"
-          New-Item -ItemType Directory -Force "$env:RUNNER_TEMP\results\cmp" | Out-Null
-          foreach ($f in 'play_up','pause_hover','thumb_up','seek_fill','shuffle_on_up','stop_hover') {
+          $pub = "$env:RUNNER_TEMP\pub"
+          New-Item -ItemType Directory -Force "$pub\results\cmp", "$pub\shots" | Out-Null
+          Copy-Item "$env:GITHUB_WORKSPACE\results\*" "$pub\results" -Recurse -Force
+          Copy-Item "$env:GITHUB_WORKSPACE\shots\*" "$pub\shots" -Recurse -Force
+          foreach ($f in 'play_up','pause_hover','thumb_up','seek_fill') {
             foreach ($d in 'out','ref') {
               $src = "$env:GITHUB_WORKSPACE\$d\dark_blue\$f.png"
-              if (Test-Path $src) { Copy-Item $src "$env:RUNNER_TEMP\results\cmp\${d}_$f.png" }
+              if (Test-Path $src) { Copy-Item $src "$pub\results\cmp\${d}_$f.png" }
             }
           }
-          if (Test-Path "$env:GITHUB_WORKSPACE\out") { Copy-Item -Recurse -Force "$env:GITHUB_WORKSPACE\out\dark_blue\theme.xml" "$env:RUNNER_TEMP\results\dark_blue_theme.xml" }
           git config user.name "ci"
           git config user.email "ci@example.invalid"
           git checkout --orphan vlc-skin-ci-results
           git rm -rf . | Out-Null
-          Copy-Item -Recurse "$env:RUNNER_TEMP\shots" shots
-          Copy-Item -Recurse "$env:RUNNER_TEMP\results" results
-          git add shots results
+          Copy-Item "$pub\results" "$env:GITHUB_WORKSPACE\R" -Recurse
+          Copy-Item "$pub\shots" "$env:GITHUB_WORKSPACE\S" -Recurse
+          git add S R
           git commit -m "CI results" | Out-Null
           git push -f origin vlc-skin-ci-results

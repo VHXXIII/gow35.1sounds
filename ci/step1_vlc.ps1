@@ -11,3 +11,10 @@ $m | ForEach-Object { $_.Value }
 $i = $text.IndexOf('<assembly')
 if ($i -ge 0) { $text.Substring($i, [Math]::Min(3000, $text.Length - $i)) }
 "psversion: $($PSVersionTable.PSVersion)"
+choco install ffmpeg -y --no-progress | Out-Null
+$ff = (Get-Command ffmpeg -ErrorAction SilentlyContinue).Source
+"ffmpeg: $ff"
+if ($ff) {
+  & $ff -y -loglevel error -f lavfi -i testsrc2=duration=60:size=640x360:rate=10 -f lavfi -i sine=frequency=440:duration=60 -c:v libx264 -preset veryfast -crf 30 -pix_fmt yuv420p -c:a aac -shortest "$env:GITHUB_WORKSPACE\test.mp4"
+  Get-Item "$env:GITHUB_WORKSPACE\test.mp4" | Format-Table Name, Length | Out-Host
+}

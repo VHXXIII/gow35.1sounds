@@ -47,4 +47,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "$env:APPDATA\Win11VLC\Win11
 Start-Sleep 5   # the watcher started by the installer should pick the change up
 Get-Content "$env:APPDATA\Win11VLC\skin\state.txt"
 Run 'switched_theme'
+if (Test-Path "$env:GITHUB_WORKSPACE\test.mp4") {
+  $p = Start-Process $vlc -ArgumentList '-vv', '--file-logging', "--logfile=$env:GITHUB_WORKSPACE\shots\playing.log", "$env:GITHUB_WORKSPACE\test.mp4" -PassThru
+  Start-Sleep 12
+  Shot 'playing'
+  Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+  Start-Sleep 2
+}
 Get-Content "$env:GITHUB_WORKSPACE\shots\switched_theme.log" | Select-String -Pattern 'skins2' | Select-Object -First 15 | ForEach-Object { $_.Line }

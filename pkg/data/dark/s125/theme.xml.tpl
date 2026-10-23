@@ -50,11 +50,21 @@
   <Bitmap id="pause_down" file="pause_down.png" alphacolor="#010203"/>
   <Bitmap id="pause_hover" file="pause_hover.png" alphacolor="#010203"/>
   <Bitmap id="pause_up" file="pause_up.png" alphacolor="#010203"/>
+  <Bitmap id="pl_add_down" file="pl_add_down.png" alphacolor="#010203"/>
+  <Bitmap id="pl_add_hover" file="pl_add_hover.png" alphacolor="#010203"/>
+  <Bitmap id="pl_add_up" file="pl_add_up.png" alphacolor="#010203"/>
   <Bitmap id="pl_bl" file="pl_bl.png" alphacolor="#010203"/>
   <Bitmap id="pl_body" file="pl_body.png" alphacolor="#010203"/>
   <Bitmap id="pl_br" file="pl_br.png" alphacolor="#010203"/>
   <Bitmap id="pl_bs" file="pl_bs.png" alphacolor="#010203"/>
+  <Bitmap id="pl_del_down" file="pl_del_down.png" alphacolor="#010203"/>
+  <Bitmap id="pl_del_hover" file="pl_del_hover.png" alphacolor="#010203"/>
+  <Bitmap id="pl_del_up" file="pl_del_up.png" alphacolor="#010203"/>
   <Bitmap id="pl_edge" file="pl_edge.png" alphacolor="#010203"/>
+  <Bitmap id="pl_sort_down" file="pl_sort_down.png" alphacolor="#010203"/>
+  <Bitmap id="pl_sort_hover" file="pl_sort_hover.png" alphacolor="#010203"/>
+  <Bitmap id="pl_sort_up" file="pl_sort_up.png" alphacolor="#010203"/>
+  <Bitmap id="pl_tool" file="pl_tool.png" alphacolor="#010203"/>
   <Bitmap id="play_down" file="play_down.png" alphacolor="#010203"/>
   <Bitmap id="play_hover" file="play_hover.png" alphacolor="#010203"/>
   <Bitmap id="play_up" file="play_up.png" alphacolor="#010203"/>
@@ -191,14 +201,18 @@
       <Panel id="pbody" y="40" width="0" height="0" rightbottom="rightbottom">
         <Image id="pl_bg" image="pl_body" x="0" y="0" resize="scale" rightbottom="rightbottom"/>
         <Image id="pl_edge" image="pl_edge" x="495" y="0" action="resizeE" resize="scale" lefttop="righttop" rightbottom="rightbottom"/>
-        <Playtree id="tree" font="font13" fgcolor="#FFFFFF" playcolor="@ACCENT@" selcolor="@ACCENT_SOFT@" bgimage="pl_body" bgcolor1="#2B2B2B" bgcolor2="#2B2B2B" itemimage="pt_item" openimage="pt_open" closedimage="pt_closed" x="15" y="10" width="458" height="575" rightbottom="rightbottom">
-          <Slider id="tree_sb" x="480" y="12" points="(0,540),(0,30)" up="sb_thumb" over="sb_thumb_hover" down="sb_thumb_hover" lefttop="righttop" rightbottom="rightbottom"/>
+        <Playtree id="tree" font="font13" fgcolor="#FFFFFF" playcolor="@ACCENT@" selcolor="@ACCENT_SOFT@" bgimage="pl_body" bgcolor1="#2B2B2B" bgcolor2="#2B2B2B" itemimage="pt_item" openimage="pt_open" closedimage="pt_closed" x="15" y="10" width="458" height="520" rightbottom="rightbottom">
+          <Slider id="tree_sb" x="480" y="12" points="(0,485),(0,30)" up="sb_thumb" over="sb_thumb_hover" down="sb_thumb_hover" lefttop="righttop" rightbottom="rightbottom"/>
         </Playtree>
       </Panel>
-      <Panel id="pctl" y="635" width="0" height="0" lefttop="leftbottom" rightbottom="rightbottom">
-        <Image id="pl_bl" image="pl_bl" x="0" y="0" action="resizeS"/>
-        <Image id="pl_bs" image="pl_bs" x="15" y="0" action="resizeS" resize="scale" rightbottom="righttop"/>
-        <Image id="pl_br" image="pl_br" x="485" y="0" action="resizeSE" lefttop="righttop" rightbottom="righttop"/>
+      <Panel id="pctl" y="580" width="0" height="0" lefttop="leftbottom" rightbottom="rightbottom">
+        <Image id="pl_tool" image="pl_tool" x="0" y="0" resize="scale" rightbottom="righttop"/>
+        <Button id="pl_add" up="pl_add_up" down="pl_add_down" over="pl_add_hover" action="playlist.add()" tooltiptext="Přidat soubory" x="10" y="2"/>
+        <Button id="pl_del" up="pl_del_up" down="pl_del_down" over="pl_del_hover" action="playlist.del()" tooltiptext="Odebrat vybrané" x="60" y="2"/>
+        <Button id="pl_sort" up="pl_sort_up" down="pl_sort_down" over="pl_sort_hover" action="playlist.sort()" tooltiptext="Seřadit" x="110" y="2"/>
+        <Image id="pl_bl" image="pl_bl" x="0" y="55" action="resizeS"/>
+        <Image id="pl_bs" image="pl_bs" x="15" y="55" action="resizeS" resize="scale" rightbottom="righttop"/>
+        <Image id="pl_br" image="pl_br" x="485" y="55" action="resizeSE" lefttop="righttop" rightbottom="righttop"/>
       </Panel>
     </Layout>
   </Window>

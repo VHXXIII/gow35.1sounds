@@ -1,0 +1,73 @@
+﻿WIN11 SKIN PRO VLC
+==================
+
+Co to je
+--------
+Vzhled pro přehrávač VLC, který vypadá jako aplikace z Windows 11
+(tlačítka a ikony ve stylu Fluent, písmo Segoe UI, zaoblené okno).
+Skin sám zjistí, jestli ve Windows používáš světlý nebo tmavý režim a jakou
+máš zvolenou akcentní barvu, a podle toho se přebarví.
+
+Jak na to (3 kroky)
+-------------------
+1) Rozbal celý zip (pravé tlačítko na zip - "Extrahovat vše").
+2) Zavři VLC (pokud běží, zavři ho i u hodin v oznamovací oblasti).
+3) Dvakrát klikni na  Instalovat.bat  a počkej, až se objeví "Hotovo".
+
+Pak už jen normálně spusť VLC - otevře se v novém vzhledu.
+Kdyby Windows při spuštění .bat souboru ukázal modré okno "Windows chránil váš
+počítač", klikni na "Další informace" a "Přesto spustit" (soubory jsou jen
+textové skripty, můžeš si je otevřít v Poznámkovém bloku a přečíst).
+
+Jak se skin přizpůsobuje Windows
+--------------------------------
+- Při instalaci se na pozadí spustí malý skrytý skript (po každém přihlášení
+  se spustí znovu). Každé 3 sekundy se podívá, jestli ses ve Windows přepnul
+  mezi světlým/tmavým režimem nebo změnil akcentní barvu. Když ano, skin
+  v pozadí přegeneruje.
+- Změna se projeví při DALŠÍM spuštění VLC (už otevřené VLC se za chodu
+  nepřebarví - VLC to u skinů neumí). Stačí VLC zavřít a znovu otevřít.
+- Používá stejná pravidla jako aplikace ve Windows 11: ve světlém režimu
+  tmavší odstín akcentní barvy, v tmavém režimu světlejší.
+
+Velikost skinu na displeji s měřítkem 125 % a víc
+--------------------------------------------------
+Instalace to zkusí poznat sama (VLC se při ní na pár vteřin otevře a zavře).
+Kdyby ti skin přesto přišel moc malý nebo moc velký, spusť
+Zmenit-velikost.bat a napiš 1, 1.25, 1.5, 1.75 nebo 2 (nebo "auto").
+
+Odinstalace
+-----------
+Zavři VLC a dvakrát klikni na Odinstalovat.bat. VLC se vrátí k původnímu
+vzhledu a skript na pozadí se zruší.
+
+Co skin neumí / na co si dát pozor
+----------------------------------
+- Vzhled VLC "skiny" umožňují jen omezeně: okno si VLC kreslí samo, takže
+  nemá průhledný efekt Mica ani stín jako opravdová okna Windows 11. Rohy jsou
+  zaoblené, ale bez vyhlazení hran.
+- Nabídky (tlačítko "..." vpravo dole), okno Předvolby, Otevřít soubor a
+  další dialogy kreslí VLC/Windows normálním způsobem - jejich vzhled skin
+  změnit nemůže.
+- Velikost okna se mění tažením pravého dolního rohu (nebo pravého a
+  dolního okraje ovládacího panelu). Okno nejde zmenšit pod základní šířku.
+- Seznam skladeb otevřeš tlačítkem se třemi řádky. Přidat/odebrat/seřadit
+  najdeš dole v jeho okně.
+- Ekvalizér a efekty: tlačítko "..." - Nástroje - Efekty a filtry.
+- Skin je pro VLC 3.x (3.0.x). Chystané VLC 4 používá jiný systém vzhledů.
+- Pro přepnutí na celou obrazovku (tlačítko vpravo) se zobrazí podobný
+  ovládací panel, když pohneš myší.
+
+Kde co leží
+-----------
+Nainstalované soubory: %APPDATA%\Win11VLC   (skin je ve složce skin)
+Nastavení VLC: %APPDATA%\vlc\vlcrc  (původní nastavení se zálohuje a při
+odinstalaci vrací).
+
+Licence a použité součásti
+--------------------------
+- Ikony: Fluent System Icons (Microsoft), licence MIT - LICENSE-Fluent-icons.txt
+- Záložní písmo: Noto Sans (Google), SIL Open Font License - LICENSE-Noto-font.txt
+- Písmo Segoe UI se z tvého Windows jen zkopíruje do složky skinu na tvém počítači,
+  s balíčkem se nešíří.
+- Skin není produkt Microsoftu ani VideoLAN.

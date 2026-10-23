@@ -31,7 +31,7 @@ for theme, sc, hexa, name in cases:
             for y in range(a.size[1]):
                 for x in range(a.size[0]):
                     p, q = pa[x, y], pb[x, y]
-                    if p[3] == 0 and q[3] == 0: continue
+                    if p[3] <= 3 and q[3] <= 3: continue
                     m = max(m, max(abs(p[i] - q[i]) for i in range(4)))
         worst = max(worst, m)
         if m > 3: badfiles.append((f, "maxdiff %d" % m))

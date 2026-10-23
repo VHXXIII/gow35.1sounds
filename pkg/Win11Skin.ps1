@@ -378,6 +378,10 @@ function Do-Install {
         Write-Host 'VLC prave bezi. Zavri ho (i v oznamovaci oblasti u hodin) a spust instalaci znovu.' -ForegroundColor Yellow
         return 2
     }
+    if (-not (Test-Path (Join-Path $ScriptDir 'data'))) {
+        Write-Host 'Nenasel jsem slozku "data". Nejdriv zip cely rozbal (pravym tlacitkem - Extrahovat vse) a az pak spust Instalovat.bat.' -ForegroundColor Yellow
+        return 3
+    }
     New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
     # soubory skinu + skript
     if ($ScriptDir -ne $InstallDir) {
@@ -422,6 +426,7 @@ function Do-Install {
     $cmd = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File ' + $q + $q + $ps1 + $q + $q + ' -Action Watch -Quiet'
     $vbsText = 'CreateObject("WScript.Shell").Run "' + $cmd + '", 0, False'
     Set-Content -LiteralPath $vbs -Value $vbsText -Encoding ASCII
+    if (-not (Test-Path $RunKey)) { New-Item -Path $RunKey -Force | Out-Null }
     Set-ItemProperty -Path $RunKey -Name $RunName -Value ('wscript.exe //B //Nologo ' + $q + $vbs + $q)
     Start-Process -FilePath 'wscript.exe' -ArgumentList @('//B', '//Nologo', $vbs) | Out-Null
 
