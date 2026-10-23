@@ -3,97 +3,45 @@ on:
   push:
     branches: [vlc-win11-skin-ci]
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   test:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Prepare
+        shell: powershell
+        run: New-Item -ItemType Directory -Force "$env:GITHUB_WORKSPACE\results", "$env:GITHUB_WORKSPACE\shots" | Out-Null
       - name: Install VLC
+        continue-on-error: true
         shell: powershell
-        run: |
-          choco install vlc -y --no-progress | Out-Host
-          $exe = "C:\Program Files\VideoLAN\VLC\vlc.exe"
-          (Get-Item $exe).VersionInfo.ProductVersion
-          Get-ChildItem "C:\Program Files\VideoLAN\VLC\skins" | Format-Table Name, Length | Out-Host
-          $bytes = [System.IO.File]::ReadAllBytes($exe)
-          $text = [System.Text.Encoding]::GetEncoding(28591).GetString($bytes)
-          $m = [regex]::Matches($text, '<(?:\w+:)?(?:dpiAware|dpiAwareness|longPathAware|gdiScaling)[^>]*>[^<]*<')
-          "manifest dpi entries: $($m.Count)"
-          $m | ForEach-Object { $_.Value }
-          $i = $text.IndexOf('<assembly')
-          if ($i -ge 0) { $text.Substring($i, [Math]::Min(3000, $text.Length - $i)) }
-          "psversion: $($PSVersionTable.PSVersion)"
-      - name: Status and Apply (dark + light) and compare with python reference
+        run: ./ci/step1_vlc.ps1 *>&1 | Tee-Object -FilePath "$env:GITHUB_WORKSPACE\results\step1.log"
+      - name: Apply and compare
+        continue-on-error: true
         shell: powershell
-        run: |
-          Set-Location "$env:GITHUB_WORKSPACE\pkg"
-          powershell -NoProfile -ExecutionPolicy Bypass -File .\Win11Skin.ps1 -Action Status
-          $sw = [Diagnostics.Stopwatch]::StartNew()
-          powershell -NoProfile -ExecutionPolicy Bypass -File .\Win11Skin.ps1 -Action Apply -Theme dark -Accent 4CC2FF -Scale 1 -OutDir "$env:GITHUB_WORKSPACE\out\dark_blue"
-          "dark apply seconds: $($sw.Elapsed.TotalSeconds)"
-          powershell -NoProfile -ExecutionPolicy Bypass -File .\Win11Skin.ps1 -Action Apply -Theme light -Accent 0067C0 -Scale 1 -OutDir "$env:GITHUB_WORKSPACE\out\light_blue"
-          powershell -NoProfile -ExecutionPolicy Bypass -File .\Win11Skin.ps1 -Action Apply -Theme dark -Accent E81123 -Scale 1.5 -OutDir "$env:GITHUB_WORKSPACE\out\dark_red150"
-          python -m pip install pillow | Out-Null
-          Set-Location $env:GITHUB_WORKSPACE
-          python ci\compare.py
-      - name: Install via script and run VLC
+        run: ./ci/step2_apply.ps1 *>&1 | Tee-Object -FilePath "$env:GITHUB_WORKSPACE\results\step2.log"
+      - name: Install skin and run VLC
+        continue-on-error: true
         shell: powershell
-        run: |
-          Set-Location "$env:GITHUB_WORKSPACE\pkg"
-          powershell -NoProfile -ExecutionPolicy Bypass -File .\Win11Skin.ps1 -Action Install
-          "---- vlcrc relevant lines"
-          Select-String -Path "$env:APPDATA\vlc\vlcrc" -Pattern '^\s*#?\s*(intf|skins2-last)\s*=' | ForEach-Object { $_.Line }
-          Get-ChildItem "$env:APPDATA\Win11VLC" | Format-Table Name, Length | Out-Host
-          Get-Content "$env:APPDATA\Win11VLC\skin\state.txt"
-          Get-Content "$env:APPDATA\Win11VLC\backup.txt"
-          Get-Process powershell, wscript -ErrorAction SilentlyContinue | Format-Table Id, ProcessName | Out-Host
-          Add-Content -Path "$env:APPDATA\vlc\vlcrc" -Value "`n[qt]`nqt-privacy-ask=0`n[core]`nmetadata-network-access=0"
-          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
-          function Shot($name) {
-            $b = [System.Windows.Forms.SystemInformation]::VirtualScreen
-            $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
-            $g = [System.Drawing.Graphics]::FromImage($bmp)
-            $g.CopyFromScreen($b.Left, $b.Top, 0, 0, $bmp.Size)
-            $bmp.Save("$env:GITHUB_WORKSPACE\shots\$name.png")
-            "screen: $($b.Width)x$($b.Height)"
-          }
-          New-Item -ItemType Directory -Force "$env:GITHUB_WORKSPACE\shots" | Out-Null
-          $vlc = "C:\Program Files\VideoLAN\VLC\vlc.exe"
-          function Run($name) {
-            $p = Start-Process $vlc -ArgumentList '-vv', '--file-logging', "--logfile=$env:GITHUB_WORKSPACE\shots\$name.log" -PassThru
-            Start-Sleep 12
-            Shot $name
-            Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
-            Start-Sleep 2
-          }
-          Run 'default_theme'
-          # change Windows look: other theme and a red accent palette
-          $pers = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize'
-          if (-not (Test-Path $pers)) { New-Item -Path $pers -Force | Out-Null }
-          $cur = (Get-ItemProperty $pers -ErrorAction SilentlyContinue).AppsUseLightTheme
-          "AppsUseLightTheme was: $cur"
-          if ($cur -eq 0) { $new = 1 } else { $new = 0 }
-          Set-ItemProperty $pers -Name AppsUseLightTheme -Value $new -Type DWord
-          $acc = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Accent'
-          if (-not (Test-Path $acc)) { New-Item -Path $acc -Force | Out-Null }
-          [byte[]]$pal = 0xFF,0x9A,0x9A,0, 0xFF,0x6B,0x6B,0, 0xF0,0x30,0x40,0, 0xE8,0x11,0x23,0, 0xC0,0x0E,0x1C,0, 0x90,0x0A,0x15,0, 0x60,0x07,0x0E,0, 0xF7,0x63,0x0C,0
-          Set-ItemProperty $acc -Name AccentPalette -Value $pal -Type Binary
-          powershell -NoProfile -ExecutionPolicy Bypass -File "$env:APPDATA\Win11VLC\Win11Skin.ps1" -Action Status
-          Start-Sleep 5   # the watcher started by the installer should pick the change up
-          Get-Content "$env:APPDATA\Win11VLC\skin\state.txt"
-          Run 'switched_theme'
-          Get-Content "$env:GITHUB_WORKSPACE\shots\switched_theme.log" | Select-String -Pattern 'skins2' | Select-Object -First 15 | ForEach-Object { $_.Line }
+        run: ./ci/step3_install.ps1 *>&1 | Tee-Object -FilePath "$env:GITHUB_WORKSPACE\results\step3.log"
       - name: Uninstall
+        continue-on-error: true
+        shell: powershell
+        run: ./ci/step4_uninstall.ps1 *>&1 | Tee-Object -FilePath "$env:GITHUB_WORKSPACE\results\step4.log"
+      - name: Publish results
+        if: always()
         shell: powershell
         run: |
-          Set-Location "$env:GITHUB_WORKSPACE\pkg"
-          powershell -NoProfile -ExecutionPolicy Bypass -File .\Win11Skin.ps1 -Action Uninstall
-          Select-String -Path "$env:APPDATA\vlc\vlcrc" -Pattern '^\s*#?\s*(intf|skins2-last)\s*=' | ForEach-Object { $_.Line }
-          (Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -ErrorAction SilentlyContinue).Win11VLCSkin
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: vlc-skin-results
-          path: |
-            shots
-            out
+          Copy-Item -Recurse -Force "$env:GITHUB_WORKSPACE\shots" "$env:RUNNER_TEMP\shots"
+          Copy-Item -Recurse -Force "$env:GITHUB_WORKSPACE\results" "$env:RUNNER_TEMP\results"
+          if (Test-Path "$env:GITHUB_WORKSPACE\out") { Copy-Item -Recurse -Force "$env:GITHUB_WORKSPACE\out\dark_blue\theme.xml" "$env:RUNNER_TEMP\results\dark_blue_theme.xml" }
+          git config user.name "ci"
+          git config user.email "ci@example.invalid"
+          git checkout --orphan vlc-skin-ci-results
+          git rm -rf . | Out-Null
+          Copy-Item -Recurse "$env:RUNNER_TEMP\shots" shots
+          Copy-Item -Recurse "$env:RUNNER_TEMP\results" results
+          git add shots results
+          git commit -m "CI results" | Out-Null
+          git push -f origin vlc-skin-ci-results
