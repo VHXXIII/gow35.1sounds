@@ -3,6 +3,9 @@ Set-Location "$env:GITHUB_WORKSPACE\pkg"
 $o = & powershell -NoProfile -ExecutionPolicy Bypass -File .\Win11Skin.ps1 -Action Install 2>&1 | Out-String
 $o
 "install exit code: $LASTEXITCODE"
+"---- probe"
+$o = & powershell -NoProfile -ExecutionPolicy Bypass -File .\Win11Skin.ps1 -Action Probe 2>&1 | Out-String
+$o
 "---- vlcrc relevant lines"
 Select-String -Path "$env:APPDATA\vlc\vlcrc" -Pattern '^\s*#?\s*(intf|skins2-last)\s*=' | ForEach-Object { $_.Line }
 Get-ChildItem "$env:APPDATA\Win11VLC" | Format-Table Name, Length | Out-Host

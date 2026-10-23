@@ -5,6 +5,9 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+concurrency:
+  group: vlc-skin
+  cancel-in-progress: true
 jobs:
   test:
     runs-on: windows-latest

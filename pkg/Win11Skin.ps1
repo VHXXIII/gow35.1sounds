@@ -2,7 +2,7 @@
 # Cte z Windows svetly/tmavy rezim a akcentni barvu, pripravi z nich skin a nastavi VLC.
 # Spousti se pres Instalovat.bat / Odinstalovat.bat (nebo rucne: Win11Skin.ps1 -Action Status)
 param(
-    [ValidateSet('Install', 'Uninstall', 'Apply', 'Watch', 'Status')]
+    [ValidateSet('Install', 'Uninstall', 'Apply', 'Watch', 'Status', 'Probe', 'SetScale')]
     [string]$Action = 'Apply',
     [ValidateSet('', 'light', 'dark')]
     [string]$Theme = '',          # natvrdo svetly/tmavy (jinak podle Windows)
@@ -102,19 +102,64 @@ function Get-VlcExe {
     return $null
 }
 
-# Je VLC "DPI aware"? (jinak ho Windows pri vyssim meritku jen roztahne a skin nema byt zvetsovan)
-function Test-VlcDpiAware([string]$exe) {
-    if (-not $exe) { return $false }
+# Je VLC "DPI aware"? Zjistime to primo z okna skinu spustene instance VLC.
+# (Kdyz neni, Windows cele okno pri vyssim meritku jen roztahne a skin se nema zvetsovat.)
+function Measure-VlcAwareness {
+    $exe = Get-VlcExe
+    if (-not $exe) { return $null }
     try {
-        $bytes = [System.IO.File]::ReadAllBytes($exe)
-        $text = [System.Text.Encoding]::GetEncoding(28591).GetString($bytes)
-        $m = [regex]::Match($text, '<(?:\w+:)?dpiAware(?:ness)?[^>]*>\s*([^<]*?)\s*<')
-        if ($m.Success) {
-            $v = $m.Groups[1].Value.ToLower()
-            if ($v -match 'true|system|permonitor') { return $true }
-        }
+        Add-Type -TypeDefinition @'
+using System;
+using System.Text;
+using System.Runtime.InteropServices;
+public static class Win11SkinProbe {
+    delegate bool EnumProc(IntPtr h, IntPtr l);
+    [DllImport("user32.dll")] static extern bool EnumWindows(EnumProc cb, IntPtr l);
+    [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
+    [DllImport("user32.dll", CharSet = CharSet.Auto)] static extern int GetClassName(IntPtr h, StringBuilder sb, int max);
+    [DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr h);
+    [DllImport("user32.dll")] static extern IntPtr GetWindowDpiAwarenessContext(IntPtr h);
+    [DllImport("user32.dll")] static extern int GetAwarenessFromDpiAwarenessContext(IntPtr c);
+    // -2 = okno nenalezeno, -1 = funkce neni k dispozici, 0 unaware, 1 system, 2 per-monitor
+    public static int Awareness(uint pid) {
+        int result = -2;
+        try {
+            EnumWindows(delegate (IntPtr h, IntPtr l) {
+                uint p; GetWindowThreadProcessId(h, out p);
+                if (p != pid || !IsWindowVisible(h)) return true;
+                StringBuilder sb = new StringBuilder(64);
+                GetClassName(h, sb, 64);
+                if (sb.ToString() != "SkinWindowClass") return true;
+                result = GetAwarenessFromDpiAwarenessContext(GetWindowDpiAwarenessContext(h));
+                return false;
+            }, IntPtr.Zero);
+        } catch { return -1; }
+        return result;
+    }
+}
+'@ -ErrorAction SilentlyContinue
     } catch { }
-    return $false
+    $proc = $null
+    try {
+        $proc = Start-Process -FilePath $exe -PassThru
+        $res = -2
+        for ($i = 0; $i -lt 40; $i++) {
+            Start-Sleep -Milliseconds 500
+            $res = [Win11SkinProbe]::Awareness([uint32]$proc.Id)
+            if ($res -ne -2) { break }
+        }
+    } catch { $res = -1 } finally {
+        if ($proc) { Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue }
+    }
+    if ($res -eq 0) { return 'unaware' }
+    if ($res -ge 1) { return 'aware' }
+    return $null
+}
+
+function Get-StoredAwareness {
+    $f = Join-Path $InstallDir 'dpi.txt'
+    if (Test-Path $f) { return (Get-Content -LiteralPath $f -Raw).Trim() }
+    return ''
 }
 
 function Pick-Scale([double]$wanted) {
@@ -241,12 +286,16 @@ function Resolve-Style {
         $h = $Matches[1]
         $acc = @([Convert]::ToInt32($h.Substring(0, 2), 16), [Convert]::ToInt32($h.Substring(2, 2), 16), [Convert]::ToInt32($h.Substring(4, 2), 16))
     }
+    $sc = 1.0
+    $override = ''
+    $sf = Join-Path $InstallDir 'scale.txt'
+    if (Test-Path $sf) { $override = (Get-Content -LiteralPath $sf -Raw).Trim() }
     if ($Scale -gt 0) {
         $sc = Pick-Scale $Scale
-    } else {
-        $sc = 1.0
-        $exe = Get-VlcExe
-        if (Test-VlcDpiAware $exe) { $sc = Pick-Scale (Get-DpiScale) }
+    } elseif ($override -match '^[0-9.]+$') {
+        $sc = Pick-Scale ([double]::Parse($override, [Globalization.CultureInfo]::InvariantCulture))
+    } elseif ((Get-StoredAwareness) -eq 'aware') {
+        $sc = Pick-Scale (Get-DpiScale)
     }
     return @{ Light = $light; Accent = $acc; Scale = $sc }
 }
@@ -356,6 +405,16 @@ function Do-Install {
     $rc = Set-IniValue $rc 'skins2' 'skins2-last' $skinXml $false
     Write-VlcRc $rc
 
+    # na displeji s meritkem nad 100 % zjistime, jestli je VLC "DPI aware" (kratce se otevre a zavre VLC)
+    $dpiFile = Join-Path $InstallDir 'dpi.txt'
+    if (Test-Path $dpiFile) { Remove-Item -LiteralPath $dpiFile -Force }
+    if ((Get-DpiScale) -ge 1.05) {
+        Write-Host 'Kratce zkousim VLC (otevre se a za par vterin zavre) ...'
+        $aw = Measure-VlcAwareness
+        if ($aw) { Set-Content -LiteralPath $dpiFile -Value $aw -Encoding ASCII }
+        [void](Apply-Skin $true)
+    }
+
     # automaticke prebarvovani pri prihlaseni (skryte, bez okna)
     $ps1 = Join-Path $InstallDir 'Win11Skin.ps1'
     $vbs = Join-Path $InstallDir 'Win11Skin-Watch.vbs'
@@ -434,7 +493,7 @@ function Do-Status {
     Write-Host ('Akcentni barva : #{0:X2}{1:X2}{2:X2}' -f $style.Accent[0], $style.Accent[1], $style.Accent[2])
     Write-Host ('Meritko skinu  : {0}' -f $style.Scale)
     Write-Host ('VLC            : {0}' -f $(if ($exe) { $exe } else { 'nenalezen' }))
-    Write-Host ('VLC DPI aware  : {0}' -f (Test-VlcDpiAware $exe))
+    Write-Host ('VLC DPI (ulozeno): {0}' -f (Get-StoredAwareness))
     return 0
 }
 
@@ -444,4 +503,14 @@ switch ($Action) {
     'Apply'     { [void](Apply-Skin $true); exit 0 }
     'Watch'     { exit (Do-Watch) }
     'Status'    { exit (Do-Status) }
+    'Probe'     { Write-Host ('Zjisteno: ' + (Measure-VlcAwareness)); exit 0 }
+    'SetScale'  {
+        New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
+        $sf = Join-Path $InstallDir 'scale.txt'
+        if ($Scale -gt 0) { Set-Content -LiteralPath $sf -Value ($Scale.ToString([Globalization.CultureInfo]::InvariantCulture)) -Encoding ASCII }
+        else { if (Test-Path $sf) { Remove-Item -LiteralPath $sf -Force } }
+        [void](Apply-Skin $true)
+        Write-Host 'Hotovo. Meritko se projevi pri dalsim spusteni VLC.'
+        exit 0
+    }
 }
