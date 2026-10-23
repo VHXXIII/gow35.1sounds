@@ -1,3 +1,4 @@
+$ErrorActionPreference = 'Continue'
 choco install vlc -y --no-progress | Out-Host
 $exe = "C:\Program Files\VideoLAN\VLC\vlc.exe"
 (Get-Item $exe).VersionInfo.ProductVersion

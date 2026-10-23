@@ -1,3 +1,4 @@
+$ErrorActionPreference = 'Continue'
 Set-Location "$env:GITHUB_WORKSPACE\pkg"
 powershell -NoProfile -ExecutionPolicy Bypass -File .\Win11Skin.ps1 -Action Status
 $sw = [Diagnostics.Stopwatch]::StartNew()
