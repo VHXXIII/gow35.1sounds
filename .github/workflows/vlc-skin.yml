@@ -1,5 +1,7 @@
 name: VLC skin test
 on:
+  push:
+    branches: [vlc-win11-skin-ci]
   workflow_dispatch:
 jobs:
   test:
