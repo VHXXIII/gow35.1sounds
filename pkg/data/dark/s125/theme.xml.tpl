@@ -76,7 +76,6 @@
   <Bitmap id="pt_item" file="pt_item.png" alphacolor="#010203"/>
   <Bitmap id="pt_open" file="pt_open.png" alphacolor="#010203"/>
   <Bitmap id="ptb_c" file="ptb_c.png" alphacolor="#010203"/>
-  <Bitmap id="ptb_hit" file="ptb_hit.png" alphacolor="#010203"/>
   <Bitmap id="ptb_l" file="ptb_l.png" alphacolor="#010203"/>
   <Bitmap id="ptb_r" file="ptb_r.png" alphacolor="#010203"/>
   <Bitmap id="repeat_all_down" file="repeat_all_down.png" alphacolor="#010203"/>
@@ -102,7 +101,6 @@
   <Bitmap id="stop_hover" file="stop_hover.png" alphacolor="#010203"/>
   <Bitmap id="stop_up" file="stop_up.png" alphacolor="#010203"/>
   <Bitmap id="tb_c" file="tb_c.png" alphacolor="#010203"/>
-  <Bitmap id="tb_hit" file="tb_hit.png" alphacolor="#010203"/>
   <Bitmap id="tb_l" file="tb_l.png" alphacolor="#010203"/>
   <Bitmap id="tb_r" file="tb_r.png" alphacolor="#010203"/>
   <Bitmap id="thumb_down" file="thumb_down.png" alphacolor="#010203"/>
@@ -119,9 +117,8 @@
         <Image id="tb_c" image="tb_c" x="15" y="0" action="move" action2="main.maximize()" resize="scale" rightbottom="righttop" visible="not main.isMaximized()"/>
         <Image id="tb_c2" image="tb_c" x="15" y="0" action="move" action2="main.unmaximize()" resize="scale" rightbottom="righttop" visible="main.isMaximized()"/>
         <Image id="tb_r" image="tb_r" x="885" y="0" action="move" lefttop="righttop" rightbottom="righttop"/>
-        <Text id="title_idle" text="VLC media player" font="font12" color="#FFFFFF" x="20" y="11" width="698" rightbottom="righttop" scrolling="none" visible="vlc.isStopped"/>
-        <Text id="title_name" text="$N" font="font12" color="#FFFFFF" x="20" y="11" width="698" rightbottom="righttop" scrolling="auto" visible="not vlc.isStopped"/>
-        <Image id="tb_hit" image="tb_hit" x="15" y="0" action="move" action2="main.maximize()" resize="scale" rightbottom="righttop"/>
+        <Text id="title_idle" text="VLC media player" font="font12" focus="false" color="#FFFFFF" x="20" y="11" width="698" rightbottom="righttop" scrolling="none" visible="vlc.isStopped"/>
+        <Text id="title_name" text="$N" font="font12" focus="false" color="#FFFFFF" x="20" y="11" width="698" rightbottom="righttop" scrolling="auto" visible="not vlc.isStopped"/>
         <Button id="m_close" up="cap_close_up" down="cap_close_down" over="cap_close_hover" action="vlc.quit()" tooltiptext="Zavřít" x="842" y="0" lefttop="righttop" rightbottom="righttop"/>
         <Button id="m_res" up="cap_res_up" down="cap_res_down" over="cap_res_hover" action="main.unmaximize()" tooltiptext="Obnovit" x="785" y="0" lefttop="righttop" rightbottom="righttop" visible="main.isMaximized()"/>
         <Button id="m_max" up="cap_max_up" down="cap_max_down" over="cap_max_hover" action="main.maximize()" tooltiptext="Maximalizovat" x="785" y="0" lefttop="righttop" rightbottom="righttop" visible="not main.isMaximized()"/>
@@ -140,12 +137,12 @@
         <Image id="bar_s" image="bar_s" x="15" y="115" action="resizeS" resize="scale" rightbottom="righttop"/>
         <Image id="bar_r" image="bar_r" x="885" y="0" action="resizeE" lefttop="righttop" rightbottom="righttop"/>
         <Image id="bar_se" image="bar_se" x="885" y="105" action="resizeSE" lefttop="righttop" rightbottom="righttop"/>
-        <Text id="t_cur" text="$T" font="font12" color="#C5C5C5" x="20" y="14" width="65" alignment="left" scrolling="none"/>
+        <Text id="t_cur" text="$T" font="font12" focus="false" color="#C5C5C5" x="20" y="14" width="65" alignment="left" scrolling="none"/>
         <Image id="seek_track" image="seek_track" x="90" y="20" resize="scale" rightbottom="righttop" visible="vlc.isStopped"/>
         <Slider id="seek" x="90" y="20" points="(0,2),(720,2)" value="time" thickness="25" up="thumb_up" down="thumb_down" over="thumb_hover" rightbottom="righttop" visible="not vlc.isStopped" tooltiptext="">
           <SliderBackground id="seek_bg" image="seek_fill" nbvert="200"/>
         </Slider>
-        <Text id="t_len" text="$D" font="font12" color="#C5C5C5" x="815" y="14" width="65" alignment="right" scrolling="none" lefttop="righttop" rightbottom="righttop"/>
+        <Text id="t_len" text="$D" font="font12" focus="false" color="#C5C5C5" x="815" y="14" width="65" alignment="right" scrolling="none" lefttop="righttop" rightbottom="righttop"/>
         <Button id="b_stop" up="stop_up" down="stop_down" over="stop_hover" action="vlc.stop()" tooltiptext="Zastavit" x="10" y="52"/>
         <Checkbox id="b_shuffle" state="playlist.isRandom" up1="shuffle_up" down1="shuffle_down" over1="shuffle_hover" up2="shuffle_on_up" down2="shuffle_on_down" over2="shuffle_on_hover" action1="playlist.setRandom(true)" action2="playlist.setRandom(false)" tooltiptext1="Náhodné pořadí" tooltiptext2="Náhodné pořadí" x="60" y="52"/>
         <Checkbox id="b_loop" state="playlist.isLoop" up1="repeat_up" down1="repeat_down" over1="repeat_hover" up2="repeat_all_up" down2="repeat_all_down" over2="repeat_all_hover" action1="playlist.setLoop(true)" action2="playlist.setLoop(false);playlist.setRepeat(true)" tooltiptext1="Opakovat" tooltiptext2="Opakovat vše" x="110" y="52"/>
@@ -170,12 +167,12 @@
       <Image id="fs_l" image="fs_l" x="0" y="0" action="move"/>
       <Image id="fs_c" image="fs_c" x="15" y="0" action="move"/>
       <Image id="fs_r" image="fs_r" x="885" y="0" action="move"/>
-      <Text id="fs_t_cur" text="$T" font="font12" color="#C5C5C5" x="20" y="14" width="65" alignment="left" scrolling="none"/>
+      <Text id="fs_t_cur" text="$T" font="font12" focus="false" color="#C5C5C5" x="20" y="14" width="65" alignment="left" scrolling="none"/>
       <Image id="fs_seek_track" image="seek_track" x="90" y="20" resize="scale" rightbottom="righttop" visible="vlc.isStopped"/>
       <Slider id="fs_seek" x="90" y="20" points="(0,2),(720,2)" value="time" thickness="25" up="thumb_up" down="thumb_down" over="thumb_hover" rightbottom="righttop" visible="not vlc.isStopped" tooltiptext="">
         <SliderBackground id="fs_seek_bg" image="seek_fill" nbvert="200"/>
       </Slider>
-      <Text id="fs_t_len" text="$D" font="font12" color="#C5C5C5" x="815" y="14" width="65" alignment="right" scrolling="none" lefttop="righttop" rightbottom="righttop"/>
+      <Text id="fs_t_len" text="$D" font="font12" focus="false" color="#C5C5C5" x="815" y="14" width="65" alignment="right" scrolling="none" lefttop="righttop" rightbottom="righttop"/>
       <Button id="fs_b_stop" up="stop_up" down="stop_down" over="stop_hover" action="vlc.stop()" tooltiptext="Zastavit" x="10" y="52"/>
       <Checkbox id="fs_b_shuffle" state="playlist.isRandom" up1="shuffle_up" down1="shuffle_down" over1="shuffle_hover" up2="shuffle_on_up" down2="shuffle_on_down" over2="shuffle_on_hover" action1="playlist.setRandom(true)" action2="playlist.setRandom(false)" tooltiptext1="Náhodné pořadí" tooltiptext2="Náhodné pořadí" x="60" y="52"/>
       <Checkbox id="fs_b_loop" state="playlist.isLoop" up1="repeat_up" down1="repeat_down" over1="repeat_hover" up2="repeat_all_up" down2="repeat_all_down" over2="repeat_all_hover" action1="playlist.setLoop(true)" action2="playlist.setLoop(false);playlist.setRepeat(true)" tooltiptext1="Opakovat" tooltiptext2="Opakovat vše" x="110" y="52"/>
@@ -200,8 +197,7 @@
         <Image id="ptb_l" image="ptb_l" x="0" y="0" action="move"/>
         <Image id="ptb_c" image="ptb_c" x="15" y="0" action="move" resize="scale" rightbottom="righttop"/>
         <Image id="ptb_r" image="ptb_r" x="485" y="0" action="move" lefttop="righttop" rightbottom="righttop"/>
-        <Text id="ptitle" text="Seznam skladeb" font="font12" color="#FFFFFF" x="20" y="11" width="412" rightbottom="righttop" scrolling="none"/>
-        <Image id="ptb_hit" image="ptb_hit" x="15" y="0" action="move" resize="scale" rightbottom="righttop"/>
+        <Text id="ptitle" text="Seznam skladeb" font="font12" focus="false" color="#FFFFFF" x="20" y="11" width="412" rightbottom="righttop" scrolling="none"/>
         <Button id="p_close" up="cap_close_up" down="cap_close_down" over="cap_close_hover" action="plwin.hide()" tooltiptext="Zavřít" x="442" y="0" lefttop="righttop" rightbottom="righttop"/>
       </Panel>
       <Panel id="pbody" y="40" width="0" height="0" rightbottom="rightbottom">

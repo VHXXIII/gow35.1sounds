@@ -39,7 +39,7 @@ function Wins($pid0) {
   $list
 }
 function Main($pid0) { (Wins $pid0 | Sort-Object { $_.Wd * $_.Ht } -Descending | Select-Object -First 1) }
-function Drag($pid0, $name, $ox, $oy, $dx, $dy) {
+function Drag($pid0, $name, [int]$ox, [int]$oy, [int]$dx, [int]$dy) {
   $m = Main $pid0
   if (-not $m) { "$name : no window"; return }
   $ax = $m.L + $ox; $ay = $m.Tp + $oy
@@ -71,7 +71,7 @@ foreach ($mode in 'idle', 'playing') {
   $m = Main $p.Id
   Drag $p.Id 'bottom_edge' ([int]($m.Wd * 0.5)) ($m.Ht - 2) 0 50
   $m = Main $p.Id
-  Drag $p.Id 'se_corner' ($m.Wd - 2) ($m.Ht - 2) 40 40
+  Drag $p.Id "se_corner" ($m.Wd - 8) ($m.Ht - 8) 40 40
   Shot "mouse_${mode}_1"
   Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
   Start-Sleep 2
