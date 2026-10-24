@@ -28,6 +28,10 @@ jobs:
         continue-on-error: true
         shell: powershell
         run: ./ci/step3_install.ps1 *>&1 | Tee-Object -FilePath "$env:GITHUB_WORKSPACE\results\step3.log"
+      - name: Mouse test
+        continue-on-error: true
+        shell: powershell
+        run: ./ci/step5_mouse.ps1 *>&1 | Tee-Object -FilePath "$env:GITHUB_WORKSPACE\results\step5.log"
       - name: Uninstall
         continue-on-error: true
         shell: powershell

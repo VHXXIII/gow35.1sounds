@@ -11,6 +11,7 @@
   <Bitmap id="bar_s" file="bar_s.png" alphacolor="#010203"/>
   <Bitmap id="bar_se" file="bar_se.png" alphacolor="#010203"/>
   <Bitmap id="body" file="body.png" alphacolor="#010203"/>
+  <Bitmap id="body_edge" file="body_edge.png" alphacolor="#010203"/>
   <Bitmap id="cap_close_down" file="cap_close_down.png" alphacolor="#010203"/>
   <Bitmap id="cap_close_hover" file="cap_close_hover.png" alphacolor="#010203"/>
   <Bitmap id="cap_close_up" file="cap_close_up.png" alphacolor="#010203"/>
@@ -75,6 +76,7 @@
   <Bitmap id="pt_item" file="pt_item.png" alphacolor="#010203"/>
   <Bitmap id="pt_open" file="pt_open.png" alphacolor="#010203"/>
   <Bitmap id="ptb_c" file="ptb_c.png" alphacolor="#010203"/>
+  <Bitmap id="ptb_hit" file="ptb_hit.png" alphacolor="#010203"/>
   <Bitmap id="ptb_l" file="ptb_l.png" alphacolor="#010203"/>
   <Bitmap id="ptb_r" file="ptb_r.png" alphacolor="#010203"/>
   <Bitmap id="repeat_all_down" file="repeat_all_down.png" alphacolor="#010203"/>
@@ -100,6 +102,7 @@
   <Bitmap id="stop_hover" file="stop_hover.png" alphacolor="#010203"/>
   <Bitmap id="stop_up" file="stop_up.png" alphacolor="#010203"/>
   <Bitmap id="tb_c" file="tb_c.png" alphacolor="#010203"/>
+  <Bitmap id="tb_hit" file="tb_hit.png" alphacolor="#010203"/>
   <Bitmap id="tb_l" file="tb_l.png" alphacolor="#010203"/>
   <Bitmap id="tb_r" file="tb_r.png" alphacolor="#010203"/>
   <Bitmap id="thumb_down" file="thumb_down.png" alphacolor="#010203"/>
@@ -118,15 +121,17 @@
         <Image id="tb_r" image="tb_r" x="1416" y="0" action="move" lefttop="righttop" rightbottom="righttop"/>
         <Text id="title_idle" text="VLC media player" font="font12" color="#FFFFFF" x="32" y="18" width="1116" rightbottom="righttop" scrolling="none" visible="vlc.isStopped"/>
         <Text id="title_name" text="$N" font="font12" color="#FFFFFF" x="32" y="18" width="1116" rightbottom="righttop" scrolling="auto" visible="not vlc.isStopped"/>
+        <Image id="tb_hit" image="tb_hit" x="24" y="0" action="move" action2="main.maximize()" resize="scale" rightbottom="righttop"/>
         <Button id="m_close" up="cap_close_up" down="cap_close_down" over="cap_close_hover" action="vlc.quit()" tooltiptext="Zavřít" x="1348" y="0" lefttop="righttop" rightbottom="righttop"/>
         <Button id="m_res" up="cap_res_up" down="cap_res_down" over="cap_res_hover" action="main.unmaximize()" tooltiptext="Obnovit" x="1256" y="0" lefttop="righttop" rightbottom="righttop" visible="main.isMaximized()"/>
         <Button id="m_max" up="cap_max_up" down="cap_max_down" over="cap_max_hover" action="main.maximize()" tooltiptext="Maximalizovat" x="1256" y="0" lefttop="righttop" rightbottom="righttop" visible="not main.isMaximized()"/>
         <Button id="m_min" up="cap_min_up" down="cap_min_down" over="cap_min_hover" action="vlc.minimize()" tooltiptext="Minimalizovat" x="1164" y="0" lefttop="righttop" rightbottom="righttop"/>
       </Panel>
       <Panel id="body" y="64" width="0" height="0" rightbottom="rightbottom">
-        <Image id="body_bg" image="body" x="0" y="0" resize="scale" rightbottom="rightbottom"/>
-        <Image id="body_art" image="body" x="0" y="0" resize="scale2" rightbottom="rightbottom" art="true"/>
-        <Video id="vid" x="0" y="0" width="1440" height="608" rightbottom="rightbottom" visible="vlc.hasVout"/>
+        <Image id="body_bg" image="body" x="0" y="0" action="move" resize="scale" rightbottom="rightbottom"/>
+        <Image id="body_art" image="body" x="0" y="0" action="move" resize="scale2" rightbottom="rightbottom" art="true"/>
+        <Video id="vid" x="0" y="0" width="1428" height="608" rightbottom="rightbottom" visible="vlc.hasVout"/>
+        <Image id="body_edge" image="body_edge" x="1428" y="0" action="resizeE" resize="scale" lefttop="righttop" rightbottom="rightbottom"/>
       </Panel>
       <Panel id="ctl" y="672" width="0" height="0" lefttop="leftbottom" rightbottom="rightbottom">
         <Image id="bar_l" image="bar_l" x="0" y="0" action="move"/>
@@ -196,10 +201,11 @@
         <Image id="ptb_c" image="ptb_c" x="24" y="0" action="move" resize="scale" rightbottom="righttop"/>
         <Image id="ptb_r" image="ptb_r" x="776" y="0" action="move" lefttop="righttop" rightbottom="righttop"/>
         <Text id="ptitle" text="Seznam skladeb" font="font12" color="#FFFFFF" x="32" y="18" width="660" rightbottom="righttop" scrolling="none"/>
+        <Image id="ptb_hit" image="ptb_hit" x="24" y="0" action="move" resize="scale" rightbottom="righttop"/>
         <Button id="p_close" up="cap_close_up" down="cap_close_down" over="cap_close_hover" action="plwin.hide()" tooltiptext="Zavřít" x="708" y="0" lefttop="righttop" rightbottom="righttop"/>
       </Panel>
       <Panel id="pbody" y="64" width="0" height="0" rightbottom="rightbottom">
-        <Image id="pl_bg" image="pl_body" x="0" y="0" resize="scale" rightbottom="rightbottom"/>
+        <Image id="pl_bg" image="pl_body" x="0" y="0" action="move" resize="scale" rightbottom="rightbottom"/>
         <Image id="pl_edge" image="pl_edge" x="792" y="0" action="resizeE" resize="scale" lefttop="righttop" rightbottom="rightbottom"/>
         <Playtree id="tree" font="font13" fgcolor="#FFFFFF" playcolor="@ACCENT@" selcolor="@ACCENT_SOFT@" bgimage="pl_body" bgcolor1="#2B2B2B" bgcolor2="#2B2B2B" itemimage="pt_item" openimage="pt_open" closedimage="pt_closed" x="24" y="16" width="732" height="832" rightbottom="rightbottom">
           <Slider id="tree_sb" x="768" y="20" points="(0,776),(0,48)" up="sb_thumb" over="sb_thumb_hover" down="sb_thumb_hover" lefttop="righttop" rightbottom="rightbottom"/>
